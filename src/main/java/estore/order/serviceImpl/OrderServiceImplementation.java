@@ -51,7 +51,6 @@ public class OrderServiceImplementation implements OrderService {
     public String updateOrder(OrderDto orderDto, Long id) {
         try {
             Order order = orderRepository.findById(id).get();
-            order.setProductName(orderDto.getName());
             orderRepository.save(order);
             return "UPDTAE SUCESSFULL";
         } catch (Exception e){
