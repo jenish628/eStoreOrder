@@ -2,49 +2,54 @@ package estore.order.controller;
 
 import estore.order.dto.OrderDto;
 import estore.order.dto.OrderLineDto;
+import estore.order.dto.ProcessOrderCheckoutDto;
 import estore.order.entity.Order;
 import estore.order.repository.OrderRepository;
 import estore.order.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import eye2web.modelmapper.ModelMapper;
+
 
 import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/order")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     @Autowired
     private OrderService orderService;
 
-    @Autowired
-    private ModelMapper modelMapper;
 
-    @GetMapping("/")
-    public List<OrderDto> getAll(){
-        return orderService.getAllOrders();
-    }
 
     @GetMapping("/{id}")
-    public OrderDto getById(@PathVariable Long id){
-        return orderService.getOrderbyId(id);
-    }
-    @PostMapping("/")
-    public void addPost(@RequestBody OrderDto orderDto){
-        orderService.addOrder(orderDto);
+    public ResponseEntity<?> getById(@PathVariable String id) {
+        return ResponseEntity.ok(orderService.getOrderbyId(id));
+
     }
 
-    @DeleteMapping("/{id}")
-    public boolean deleteOrder(@PathVariable Long id){
-        return orderService.deleteOrder(id);
+    @PostMapping("/add-to-cart")
+    public ResponseEntity<?> addNewOrder(@RequestBody OrderDto orderDto) {
+        return ResponseEntity.ok(orderService.addOrder(orderDto));
     }
 
-    @PutMapping("/{id}")
-    public String editOrders(@RequestBody OrderDto orderDto,
-                             @PathVariable Long id){
-        return orderService.updateOrder(orderDto,id);
+    @DeleteMapping("/remove-item-from-cart/{cartId}")
+    public ResponseEntity<?> removeFromCart(@PathVariable Long cartId) {
+        return ResponseEntity.ok(orderService.removeItemFromCart(cartId));
+    }
+
+    @DeleteMapping("/remove-all-item-from-cart/{orderId}")
+    public ResponseEntity<?> removeAllItemFromCart(@PathVariable String orderId) {
+        orderService.removeAllItemFromCart(orderId);
+        return ResponseEntity.ok("Successfully deleted");
+    }
+
+
+    @DeleteMapping("/payment-checkout")
+    public ResponseEntity<?> paymentCheckout(@RequestBody ProcessOrderCheckoutDto processOrderCheckoutDto) {
+        orderService.checkoutOrder(processOrderCheckoutDto);
+        return ResponseEntity.ok("Successfully Checkout");
     }
 
 

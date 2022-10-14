@@ -1,32 +1,64 @@
 package estore.order.entity;
 
 import estore.order.enumm.OrderStatus;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import lombok.*;
+import org.hibernate.annotations.UpdateTimestamp;
+
 
 import javax.persistence.*;
-import java.util.Date;
-import java.util.Random;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.*;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "orders")
+@Table(name = "order_table")
+@Builder
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", insertable = false, updatable = false,nullable = false)
-    private UUID id;
+    @Column(name = "id", updatable = false, nullable = false)
+    private String uuid;
     private int itemsCount;
-    private Double totalAmount;
-    private Date createdDate;
+    private double totalAmount;
+    @Column(updatable = false)
+    private LocalDate createdDate = LocalDate.now();
+
     private String createdBy;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus orderStatus;
+    private OrderStatus orderStatus = OrderStatus.PENDING;
 
+    private Long paymentMethodId;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "order")
+    @org.hibernate.annotations.OrderBy(clause = "id asc")
+    private Set<OrderLine> orderLines;
+
+
+    @UpdateTimestamp
+    private LocalDate updatedDate;
+
+
+    @PrePersist
+    public void prePersist() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID().toString();
+        }
+        if (this.createdDate == null) this.createdDate = LocalDate.now();
+    }
+
+
+    public void addOrderLine(OrderLine orderLine) {
+        if (this.orderLines == null) this.orderLines = new HashSet<>();
+        this.orderLines.add(orderLine);
+        this.totalAmount += orderLine.getTotalPrice();
+        orderLine.setOrder(this);
+    }
+
+
+    public void removeOrderLine(OrderLine orderLine) {
+        this.orderLines.remove(orderLine);
+        this.totalAmount-= orderLine.getTotalPrice();
+        orderLine.setOrder(null);
+    }
 }

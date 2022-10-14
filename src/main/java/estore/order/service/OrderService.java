@@ -3,8 +3,7 @@ package estore.order.service;
 
 
 
-import estore.order.dto.OrderDto;
-import estore.order.dto.OrderLineDto;
+import estore.order.dto.*;
 import estore.order.entity.Order;
 
 import java.util.List;
@@ -12,10 +11,13 @@ import java.util.List;
 public interface OrderService {
 
     public List<OrderDto> getAllOrders();
-    public OrderDto getOrderbyId(Long id);
+    public OrderResponseDto getOrderbyId(String id);
     public boolean deleteOrder(Long id);
-    public void addOrder(OrderDto order);
-    public String updateOrder(OrderDto orderDto, Long id);
+    public OrderResponseDto addOrder(OrderDto order);
+
+    OrderResponseDto removeItemFromCart(Long cartId);
+    public void removeAllItemFromCart(String orderId);
+    public PaymentResponseDto checkoutOrder(ProcessOrderCheckoutDto processOrderCheckoutDto);
 
 
 

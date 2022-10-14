@@ -2,71 +2,60 @@ package estore.order.serviceImpl;
 
 import estore.order.dto.OrderDto;
 import estore.order.dto.OrderLineDto;
+import estore.order.entity.Order;
 import estore.order.entity.OrderLine;
-import estore.order.exception.OperationUnsucessfullException;
+import estore.order.exception.OrderLineNotFoundException;
 import estore.order.repository.OrderLineRepository;
 import estore.order.service.OrderLineService;
-import eye2web.modelmapper.ModelMapper;
+import estore.order.service.OrderService;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class OrderLineServiceImplementation implements OrderLineService {
 
-    @Autowired
+
+
     private OrderLineRepository orderLineRepository;
 
-    @Autowired
-    private ModelMapper mapper;
-    @Override
-    public List<OrderLineDto> getAll() {
-        // order -> orderline dto
-
-//      return   orderLineRepository
-//                .findAll()
-//                .stream()
-//                .map(orderLine -> {
-//                    OrderLineDto orderLineDto = new OrderLineDto();
-//                    orderLineDto.setOrderId(orderLine.getOrderId());
-//                    return orderLineDto;
-//                }).collect(Collectors.toList());
-
-        return orderLineRepository.findAll().stream().map(a-> mapper.map(a, OrderLineDto.class)).collect(Collectors.toList());
+    public OrderLineServiceImplementation(OrderLineRepository orderLineRepository) {
+        this.orderLineRepository = orderLineRepository;
     }
 
     @Override
-    public OrderLineDto getByOrderLineId(Long id) {
-        return mapper.map(orderLineRepository.findAll(),OrderLineDto.class);
+    public List<OrderLineDto> getAll() {
+        return null;
+    }
+
+    @Override
+    public OrderLine getByOrderLineId(Long id) {
+
+        Optional<OrderLine> orderLine = orderLineRepository.findById(id);
+        if(orderLine.isEmpty()) throw new OrderLineNotFoundException("Item not found");
+        return orderLine.get();
     }
 
     @Override
     public boolean delete(Long id) {
-        try {
-            orderLineRepository.deleteById(id);
-            return true;
-        }catch (Exception e){
-            throw new OperationUnsucessfullException();
-        }
+        return false;
     }
 
     @Override
     public String Update(OrderLineDto orderLineDto, Long id) {
-        try {
-            OrderLine orderLine = orderLineRepository.findById(id).get();
-            orderLine.setId(orderLineDto.getId());
-
-            orderLineRepository.save(orderLine);
-            return "Update Sucessfull";
-        }catch (Exception e){
-            throw new OperationUnsucessfullException();
-        }
+        return null;
     }
 
     @Override
     public void add(OrderLineDto orderLineDto) {
-        orderLineRepository.save(mapper.map(orderLineDto, OrderLine.class));
+
+    }
+
+    @Override
+    public OrderLine findByProductIdAndOrder(Long productId, Order order){
+        return orderLineRepository.findByProductIdAndOrder(productId, order);
     }
 }

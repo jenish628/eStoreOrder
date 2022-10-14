@@ -4,6 +4,7 @@ package estore.order.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
@@ -12,16 +13,16 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "table_order_line")
+@EqualsAndHashCode(exclude = "order")
 public class OrderLine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private long productId;
-    @Column(updatable = false)
-    private long orderId;
-    private Double price;
+    private double price;
     private int quantity;
-    private Double totalPrice;
-
-
+    private double totalPrice;
+    @ManyToOne
+    private Order order;
 }
