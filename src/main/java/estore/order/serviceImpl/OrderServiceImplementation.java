@@ -6,6 +6,7 @@ import estore.order.dto.*;
 import estore.order.entity.Order;
 import estore.order.entity.OrderLine;
 import estore.order.enumm.OrderStatus;
+import estore.order.enumm.ProductEnum;
 import estore.order.enumm.PurchaseStatus;
 import estore.order.exception.OrderNotFoundException;
 import estore.order.mapper.OrderMapper;
@@ -29,26 +30,18 @@ import java.util.Optional;
 @Transactional
 public class OrderServiceImplementation implements OrderService {
 
-
-    private final PaymentClient paymentClient;
-    private final OrderRepository orderRepository;
-
-    private final OrderLineService orderLineService;
-
+    @Autowired
+    private PaymentClient paymentClient;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private OrderLineService orderLineService;
+    @Autowired
     private OrderMapper orderMapper;
-
+    @Autowired
     private ProductClient productClient;
-
-
     @Autowired
     private HttpServletRequest request;
-    public OrderServiceImplementation(PaymentClient paymentClient, OrderRepository orderRepository, OrderLineService orderLineService, OrderMapper orderMapper, ProductClient productClient) {
-        this.paymentClient = paymentClient;
-        this.orderRepository = orderRepository;
-        this.orderLineService = orderLineService;
-        this.orderMapper = orderMapper;
-        this.productClient = productClient;
-    }
 
     @Override
     public List<OrderDto> getAllOrders() {
@@ -70,7 +63,17 @@ public class OrderServiceImplementation implements OrderService {
     public OrderResponseDto addOrder(OrderDto orderDto) {
 
         Order order = findByOrderAndStatus();
-        order.addOrderLine(createNewOrder(orderDto));
+
+        ProductDto productDto = productClient.changeProductUnit(
+                request.getHeader("Authorization"),
+                ProductChangeUnitDto.builder()
+                        .productId(orderDto.getProductId())
+                        .status(ProductEnum.SOLD)
+                        .quantity(orderDto.getQuantity()).build()
+        );
+
+
+        order.addOrderLine(createNewOrder(orderDto, productDto));
         orderRepository.save(order);
         return orderMapper.convertOrderResponseEntity(order);
     }
@@ -98,7 +101,7 @@ public class OrderServiceImplementation implements OrderService {
                 .amount(order.getTotalAmount()).build();
 
         PaymentResponseDto paymentResponseDto = paymentClient
-                .processPurchase(request.getHeader("Authorization"),processPaymentDto
+                .processPurchase(request.getHeader("Authorization"), processPaymentDto
                 );
 
         order.setOrderStatus(paymentResponseDto.getPurchaseStatus() == PurchaseStatus.SUCCESS ?
@@ -128,9 +131,8 @@ public class OrderServiceImplementation implements OrderService {
     }
 
 
-    private OrderLine createNewOrder(OrderDto orderDto) {
+    private OrderLine createNewOrder(OrderDto orderDto, ProductDto productDto) {
         OrderLine orderLine = orderMapper.convertToOrderLineEntity(orderDto);
-        ProductDto productDto = productClient.getProduct(1l);
         orderLine.setTotalPrice(productDto.getPrice() * orderDto.getQuantity());
         orderLine.setPrice(productDto.getPrice());
         return orderLine;
