@@ -12,4 +12,6 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
 
     Optional<Order> findByCreatedByAndOrderStatus(String username, OrderStatus orderStatus);
+
+    Optional<Order> findByUuidAndOrderStatus(String uuid,OrderStatus orderStatus);
 }

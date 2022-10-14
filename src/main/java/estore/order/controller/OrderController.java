@@ -22,7 +22,6 @@ public class OrderController {
     private OrderService orderService;
 
 
-
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable String id) {
         return ResponseEntity.ok(orderService.getOrderbyId(id));
@@ -46,10 +45,9 @@ public class OrderController {
     }
 
 
-    @DeleteMapping("/payment-checkout")
+    @PutMapping("/payment-checkout")
     public ResponseEntity<?> paymentCheckout(@RequestBody ProcessOrderCheckoutDto processOrderCheckoutDto) {
-        orderService.checkoutOrder(processOrderCheckoutDto);
-        return ResponseEntity.ok("Successfully Checkout");
+        return ResponseEntity.ok(orderService.checkoutOrder(processOrderCheckoutDto));
     }
 
 

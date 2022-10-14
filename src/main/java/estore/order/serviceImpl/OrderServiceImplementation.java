@@ -73,25 +73,35 @@ public class OrderServiceImplementation implements OrderService {
 
     @Override
     public PaymentResponseDto checkoutOrder(ProcessOrderCheckoutDto processOrderCheckoutDto) {
-        Order order = findByOrderId(processOrderCheckoutDto.getOrderId());
+
+        Optional<Order> optionalOrder = orderRepository.findByUuidAndOrderStatus(processOrderCheckoutDto.getOrderId(),
+                OrderStatus.PENDING);
+
+        if (optionalOrder.isEmpty()) throw new OrderNotFoundException("Order not found");
+        Order order = optionalOrder.get();
+
+//        Order order = findByOrderId(processOrderCheckoutDto.getOrderId());
         order.setOrderStatus(OrderStatus.PROCESSING);
         order.setPaymentMethodId(processOrderCheckoutDto.getPaymentMethodId());
         orderRepository.saveAndFlush(order);
 
 //        todo calling payment api
 
+
+        ProcessPaymentDto processPaymentDto = ProcessPaymentDto.builder()
+                .paymentMethodId(processOrderCheckoutDto.getPaymentMethodId())
+                .orderId(order.getUuid())
+                .amount(order.getTotalAmount()).build();
+
         PaymentResponseDto paymentResponseDto = paymentClient
-                .processPurchase(ProcessPaymentDto.builder()
-                        .paymentMethodId(processOrderCheckoutDto.getPaymentMethodId())
-                        .orderId(order.getUuid())
-                        .amount(order.getTotalAmount()).build()
+                .processPurchase(processPaymentDto
                 );
 
         order.setOrderStatus(paymentResponseDto.getPurchaseStatus() == PurchaseStatus.SUCCESS ?
                 OrderStatus.COMPLETED :
                 OrderStatus.CANCELLED);
         orderRepository.saveAndFlush(order);
-        return orderMapper.checkoutResponse(order);
+        return paymentResponseDto;
 
     }
 
@@ -143,4 +153,6 @@ public class OrderServiceImplementation implements OrderService {
         if (optionalOrder.isEmpty()) throw new OrderNotFoundException("Order not found");
         return optionalOrder.get();
     }
+
+
 }
