@@ -19,6 +19,7 @@ import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,9 @@ public class OrderServiceImplementation implements OrderService {
 
     private ProductClient productClient;
 
+
+    @Autowired
+    private HttpServletRequest request;
     public OrderServiceImplementation(PaymentClient paymentClient, OrderRepository orderRepository, OrderLineService orderLineService, OrderMapper orderMapper, ProductClient productClient) {
         this.paymentClient = paymentClient;
         this.orderRepository = orderRepository;
@@ -94,7 +98,7 @@ public class OrderServiceImplementation implements OrderService {
                 .amount(order.getTotalAmount()).build();
 
         PaymentResponseDto paymentResponseDto = paymentClient
-                .processPurchase(processPaymentDto
+                .processPurchase(request.getHeader("Authorization"),processPaymentDto
                 );
 
         order.setOrderStatus(paymentResponseDto.getPurchaseStatus() == PurchaseStatus.SUCCESS ?

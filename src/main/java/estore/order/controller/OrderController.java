@@ -46,7 +46,9 @@ public class OrderController {
 
 
     @PutMapping("/payment-checkout")
-    public ResponseEntity<?> paymentCheckout(@RequestBody ProcessOrderCheckoutDto processOrderCheckoutDto) {
+    public ResponseEntity<?> paymentCheckout(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody ProcessOrderCheckoutDto processOrderCheckoutDto) {
         return ResponseEntity.ok(orderService.checkoutOrder(processOrderCheckoutDto));
     }
 
