@@ -1,5 +1,6 @@
 package estore.order.serviceImpl;
 
+import estore.order.client.AddressClient;
 import estore.order.client.PaymentClient;
 import estore.order.client.ProductClient;
 import estore.order.dto.*;
@@ -8,6 +9,7 @@ import estore.order.entity.OrderLine;
 import estore.order.enumm.OrderStatus;
 import estore.order.enumm.ProductEnum;
 import estore.order.enumm.PurchaseStatus;
+import estore.order.exception.AddressNotFoundException;
 import estore.order.exception.OrderNotFoundException;
 import estore.order.mapper.OrderMapper;
 import estore.order.repository.OrderRepository;
@@ -42,6 +44,9 @@ public class OrderServiceImplementation implements OrderService {
     private ProductClient productClient;
     @Autowired
     private HttpServletRequest request;
+
+    @Autowired
+    private AddressClient addressClient;
 
     @Override
     public List<OrderDto> getAllOrders() {
@@ -80,35 +85,48 @@ public class OrderServiceImplementation implements OrderService {
 
     @Override
     public PaymentResponseDto checkoutOrder(ProcessOrderCheckoutDto processOrderCheckoutDto) {
+        try{
 
-        Optional<Order> optionalOrder = orderRepository.findByUuidAndOrderStatus(processOrderCheckoutDto.getOrderId(),
-                OrderStatus.PENDING);
+            Optional<Order> optionalOrder = orderRepository.findByUuidAndOrderStatus(processOrderCheckoutDto.getOrderId(),
+                    OrderStatus.PENDING);
 
-        if (optionalOrder.isEmpty()) throw new OrderNotFoundException("Order not found");
-        Order order = optionalOrder.get();
+            if (optionalOrder.isEmpty()) throw new OrderNotFoundException("Order not found");
+
+            AddressDto addressDto = addressClient.findAddressById(request.getHeader("Authorization"),
+                    processOrderCheckoutDto.getAddressId()
+            );
+
+
+            if(addressDto == null) throw new  AddressNotFoundException("Address not found");
+            if(!addressDto.isShippingAddress()) throw new AddressNotFoundException("Shipping address not found");
+
+            Order order = optionalOrder.get();
 
 //        Order order = findByOrderId(processOrderCheckoutDto.getOrderId());
-        order.setOrderStatus(OrderStatus.PROCESSING);
-        order.setPaymentMethodId(processOrderCheckoutDto.getPaymentMethodId());
-        orderRepository.saveAndFlush(order);
+            order.setOrderStatus(OrderStatus.PROCESSING);
+            order.setPaymentMethodId(processOrderCheckoutDto.getPaymentMethodId());
+            orderRepository.saveAndFlush(order);
 
 //        todo calling payment api
 
 
-        ProcessPaymentDto processPaymentDto = ProcessPaymentDto.builder()
-                .paymentMethodId(processOrderCheckoutDto.getPaymentMethodId())
-                .orderId(order.getUuid())
-                .amount(order.getTotalAmount()).build();
+            ProcessPaymentDto processPaymentDto = ProcessPaymentDto.builder()
+                    .paymentMethodId(processOrderCheckoutDto.getPaymentMethodId())
+                    .orderId(order.getUuid())
+                    .amount(order.getTotalAmount()).build();
 
-        PaymentResponseDto paymentResponseDto = paymentClient
-                .processPurchase(request.getHeader("Authorization"), processPaymentDto
-                );
+            PaymentResponseDto paymentResponseDto = paymentClient
+                    .processPurchase(request.getHeader("Authorization"), processPaymentDto
+                    );
 
-        order.setOrderStatus(paymentResponseDto.getPurchaseStatus() == PurchaseStatus.SUCCESS ?
-                OrderStatus.COMPLETED :
-                OrderStatus.CANCELLED);
-        orderRepository.saveAndFlush(order);
-        return paymentResponseDto;
+            order.setOrderStatus(paymentResponseDto.getPurchaseStatus() == PurchaseStatus.SUCCESS ?
+                    OrderStatus.COMPLETED :
+                    OrderStatus.CANCELLED);
+            orderRepository.saveAndFlush(order);
+            return paymentResponseDto;
+        }catch (Exception ex) {
+            throw new OrderNotFoundException(ex.getMessage());
+        }
 
     }
 

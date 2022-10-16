@@ -8,5 +8,6 @@ public class ProcessOrderCheckoutDto {
 
     private String orderId;
     private Long paymentMethodId;
+    private Long addressId;
 
 }

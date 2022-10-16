@@ -31,4 +31,11 @@ public class OperationUnsucessfullExceptionHandler extends ResponseEntityExcepti
         return handleExceptionInternal(e,e.getMessage(),new HttpHeaders(),
                 HttpStatus.NOT_FOUND,request);
     }
+
+    @ExceptionHandler({AddressNotFoundException.class})
+    public ResponseEntity<Object> addressNotFound(OrderNotFoundException e, WebRequest request){
+        return handleExceptionInternal(e,e.getMessage(),new HttpHeaders(),
+                HttpStatus.NOT_FOUND,request);
+    }
+
 }
